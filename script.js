@@ -1789,8 +1789,18 @@ socket.on("uploadedimage", (path, newid, ping, uuid) => {
 
   let obj = getpath(path, uuid);
 
+  obj.uploading = false;
+
+
+  if(newid == "failed"){
+    return;
+  }
+
   let newimage = document.createElement("img");
   newimage.src = obj.myimage.src;
+
+
+
 
   let newobj = {
 
@@ -1805,7 +1815,7 @@ socket.on("uploadedimage", (path, newid, ping, uuid) => {
 
   obj.requests.add(newid);
 
-  obj.uploading = false;
+
 
   delete obj.myimagearray;
 
