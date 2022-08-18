@@ -153,6 +153,28 @@ socket.on("connect", () => {
 
 setInterval(draw, 10)
 
+function addnotification(notification, length, fadeouttime){
+
+  let parent = document.getElementById("notifications");
+  let created = document.createElement("p");
+
+  created.classList.add("notification");
+  created.innerText = notification;
+
+  parent.appendChild(created);
+
+  $(".notification").click(function(){
+    this.parentNode.removeChild(this);
+  })
+
+  $(created).hide().fadeIn(300);
+
+  setTimeout(() => {
+    $(created).fadeOut(fadeouttime)
+  }, length)
+
+}
+
 function coordconvert(x,y,cx,cy,zoom){
 
   let dx = x - canvas.width/2;
@@ -1744,6 +1766,14 @@ socket.on("uploadedimage", (path, newid) => {
 
 
 
+
+
+})
+
+socket.on("notification", (data) => {
+
+
+  addnotification(data.notification, data.time, 500);
 
 
 })

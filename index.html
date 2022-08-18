@@ -4,12 +4,29 @@
 <head>
 
 	<script src="socket.io.js"></script>
+	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+
 	<canvas id="myCanvas" width="2000" height="2000"></canvas>
 
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width">
 	<title>Draw Evolver</title>
 	<link href="style.css" rel="stylesheet" type="text/css" />
+	<div id ="notifications">
+	</div>
+
+	<script>
+
+	$(".notification").click(function(){
+
+		this.parentNode.removeChild(this);
+
+	})
+
+	</script>
+
+
 </head>
 
 <body>
