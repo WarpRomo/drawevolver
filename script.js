@@ -53,7 +53,7 @@ let drawdrawmode = false;
 let drawcolorpicker = false;
 let drawdeltascroll = 0;
 
-console.log("ver 2");
+console.log("ver 3");
 
 let drawcolorpallete = [[[51,0,0],[51,25,0],[51,51,0],[25,51,0],[0,51,0],[0,51,25],[0,51,51],[0,25,51],[0,0,51],[25,0,51],[51,0,51],[51,0,25],[0,0,0]],[[102,0,0],[102,51,0],[102,102,0],[51,102,0],[0,102,0],[0,102,51],[0,102,102],[0,51,102],[0,0,102],[51,0,102],[102,0,102],[102,0,51],[32,32,32]],[[153,0,0],[153,76,0],[153,153,0],[76,153,0],[0,153,0],[0,153,76],[0,153,153],[0,76,153],[0,0,153],[76,0,153],[153,0,153],[153,0,76],[64,64,64]],[[204,0,0],[204,102,0],[204,204,0],[102,204,0],[0,204,0],[0,204,102],[0,204,204],[0,102,204],[0,0,204],[102,0,204],[204,0,204],[204,0,102],[96,96,96]],[[255,0,0],[255,128,0],[255,255,0],[128,255,0],[0,255,0],[0,255,128],[0,255,255],[0,128,255],[0,0,255],[127,0,255],[255,0,255],[255,0,127],[128,128,128]],[[255,51,51],[255,153,51],[255,255,51],[153,255,51],[51,255,51],[51,255,153],[51,255,255],[51,153,255],[51,51,255],[153,51,255],[255,51,255],[255,51,153],[160,160,160]],[[255,102,102],[255,178,102],[255,255,102],[178,255,102],[102,255,102],[102,255,178],[102,255,255],[102,178,255],[102,102,255],[178,102,255],[255,102,255],[255,102,178],[192,192,192]],[[255,153,153],[255,204,153],[255,255,153],[204,255,153],[153,255,153],[153,255,204],[153,255,255],[153,204,255],[153,153,255],[204,153,255],[255,153,255],[255,153,204],[224,224,224]],[[255,204,204],[255,229,204],[255,255,204],[229,255,204],[204,255,204],[204,255,229],[204,255,255],[204,229,255],[204,204,255],[229,204,255],[255,204,255],[255,204,229],[255,255,255]]]
 
@@ -100,12 +100,17 @@ searchicon.src = "searchicon.png"
 let loadingicon = document.createElement("img");
 loadingicon.src = "loadingicon.png"
 let crossicon = document.createElement("img");
-crossicon .src = "crossicon.png"
+crossicon.src = "crossicon.png"
+
+let copyicon = document.createElement("img");
+copyicon.src = "copyicon.png";
 
 let uploadicon = document.createElement("img");
 uploadicon.src = "uploadicon.png";
 let tutorial = document.createElement("img");
 tutorial.src = "tutorial.png";
+
+
 
 
 let backgroundcolor = "#EBEBEB";
@@ -135,6 +140,7 @@ let drawtree = {
   myimage: firstimage,
   myoriginalimage: firstimageoriginal,
   personalid: 0,
+  uuid: 0,
   mylength: -1,
   requests: new Set(),
   scroll: 0,
@@ -152,6 +158,14 @@ socket.on("connect", () => {
 
 
 setInterval(draw, 10)
+
+
+
+let uuidcount = 0;
+function getuuid(){
+  uuidcount++;
+  return uuidcount;
+}
 
 function addnotification(notification, length, fadeouttime){
 
@@ -350,6 +364,7 @@ function hoveroutline(){
         myoriginalimage: original,
         myid: hoveredimage[0].myid + "/" + hoveredimage[5],
         personalid: hoveredimage[5],
+        uuid: getuuid(),
         mylength: -1,
         requests: new Set(),
         scroll: 0,
@@ -1222,7 +1237,17 @@ function drawval(part){
     let copywidth = 0.2;
     let copypadding = 0.03;
     let copybuttonid = drawoutlinebutton(pos.x + s*zoom - (copywidth + copypadding) * s * zoom, pos.y + (copypadding)*s*zoom, copywidth*s*zoom, copyheight*s*zoom, buttoncolor, "rgba(50,50,50,1)",4, justclicked );
+    ctx.drawImage(copyicon, pos.x + s*zoom - (copywidth + copypadding) * s * zoom, pos.y + (copypadding)*s*zoom, copywidth*s*zoom, copyheight*s*zoom);
 
+    if(copybuttonid == "clicked"){
+
+
+      let copiedid = part.myid;
+
+      copyTextToClipboard(copiedid);
+      addnotification(`Copied 'full ID' to clipboard: ` + copiedid, 3000, 500);
+
+    }
 
     if(uploadbutton == false && copybuttonid == false){
 
@@ -1278,7 +1303,7 @@ function drawval(part){
 
     part.searchinput[2] = "searching";
     console.log("search image");
-    socket.emit("getpath", part.myid + `/${input}.png`, "searchimage")
+    socket.emit("getpath", part.myid + `/${input}.png`, "searchimage", part.uuid)
 
 
   }
@@ -1511,7 +1536,7 @@ function executeval(part){
     part.requests.add(-1);
 
     console.log("request text");
-    socket.emit("getpath", part.myid + "/info.txt")
+    socket.emit("getpath", part.myid + "/info.txt", "", part.uuid)
 
   }
 
@@ -1524,7 +1549,7 @@ function executeval(part){
 
 
       console.log("request image");
-      socket.emit("getpath", part.myid + `/${a}.png`)
+      socket.emit("getpath", part.myid + `/${a}.png`, "", part.uuid)
 
     }
 
@@ -1541,7 +1566,7 @@ function executeval(part){
       part.requests.add(a);
 
       console.log("request image");
-      socket.emit("getpath", part.myid + `/${a}.png`)
+      socket.emit("getpath", part.myid + `/${a}.png`, "", part.uuid)
 
     }
 
@@ -1594,12 +1619,14 @@ socket.on("path", data => {
     if(data.ping == "searchimage"){
 
       let path = data.path;
+      let uuid = data.uuid;
 
       if(path.endsWith(".png")) path = path.split(".png")[0];
 
       path = path.split("/");
 
-      let obj = getpath(path);
+      let obj = getpath(path, uuid);
+
 
 
       if(data.data == "nonexistent"){
@@ -1641,12 +1668,13 @@ socket.on("path", data => {
     console.log(data);
 
     let path = data.path;
+    let uuid = data.uuid;
 
     if(path.endsWith(".png")) path = path.split(".png")[0];
 
     path = path.split("/");
 
-    let obj = getpath(path);
+    let obj = getpath(path, uuid);
 
     let theid = parseInt(path[path.length-1]);
 
@@ -1684,15 +1712,18 @@ socket.on("path", data => {
 
   else if(data.type == "text"){
 
-    console.log("RECIEVED TEXT DATA " + data);
+    console.log("RECIEVED TEXT DATA ");
+
+    console.log(data);
 
     let path = data.path;
+    let uuid = data.uuid;
 
     if(path.endsWith(".txt")) path = path.split(".txt")[0];
 
     path = path.split("/");
 
-    let obj = getpath(path);
+    let obj = getpath(path, uuid);
 
     obj.mylength = data.data["length"];
 
@@ -1701,25 +1732,51 @@ socket.on("path", data => {
 
 });
 
-function getpath(path){
+function getpath(path, uuid = "none"){
   //path = path.split("/");
 
-  let obj = drawtree;
+  console.log("uuid: " + uuid);
 
-  L: for(var a = 1; a < path.length-1; a++){
+  let objs = [drawtree];
+  let newobjs = [];
 
-    for(var b = 0; b < obj.children.length; b++){
+  for(var a = 1; a < path.length-1; a++){
 
-      if(obj.children[b].personalid == parseInt(path[a])){
-        obj = obj.children[b];
-        continue L;
+    for(var b = 0; b < objs.length; b++){
+
+      for(var c = 0; c < objs[b].children.length; c++){
+
+        if(objs[b].children[c].personalid == parseInt(path[a])){
+
+          newobjs.push(objs[b].children[c]);
+
+        }
+
       }
 
     }
 
+    objs = [...newobjs];
+    newobjs = [];
+
   }
 
-  return obj;
+  console.log("final list of objs: ")
+  console.log(objs);
+
+  if(uuid == "none") return objs[0];
+  else{
+    for(var a = 0; a < objs.length; a++){
+
+      if(objs[a].uuid == uuid){
+
+        console.log("return it");
+
+        return objs[a];
+      }
+    }
+  }
+
 }
 
 
@@ -1777,3 +1834,57 @@ socket.on("notification", (data) => {
 
 
 })
+
+function copyTextToClipboard(text) {
+  var textArea = document.createElement("textarea");
+
+  //
+  // *** This styling is an extra step which is likely not required. ***
+  //
+  // Why is it here? To ensure:
+  // 1. the element is able to have focus and selection.
+  // 2. if the element was to flash render it has minimal visual impact.
+  // 3. less flakyness with selection and copying which **might** occur if
+  //    the textarea element is not visible.
+  //
+  // The likelihood is the element won't even render, not even a
+  // flash, so some of these are just precautions. However in
+  // Internet Explorer the element is visible whilst the popup
+  // box asking the user for permission for the web page to
+  // copy to the clipboard.
+  //
+  // Place in the top-left corner of screen regardless of scroll position.
+  textArea.style.position = 'fixed';
+  textArea.style.top = 0;
+  textArea.style.left = 0;
+
+  // Ensure it has a small width and height. Setting to 1px / 1em
+  // doesn't work as this gives a negative w/h on some browsers.
+  textArea.style.width = '2em';
+  textArea.style.height = '2em';
+
+  // We don't need padding, reducing the size if it does flash render.
+  textArea.style.padding = 0;
+
+  // Clean up any borders.
+  textArea.style.border = 'none';
+  textArea.style.outline = 'none';
+  textArea.style.boxShadow = 'none';
+
+  // Avoid flash of the white box if rendered for any reason.
+  textArea.style.background = 'transparent';
+  textArea.value = text;
+
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+
+  try {
+    var successful = document.execCommand('copy');
+    var msg = successful ? 'successful' : 'unsuccessful';
+  } catch (err) {
+    console.log('unable to copy');
+  }
+
+  document.body.removeChild(textArea);
+}
