@@ -53,7 +53,7 @@ let drawdrawmode = false;
 let drawcolorpicker = false;
 let drawdeltascroll = 0;
 
-console.log("ver 5");
+console.log("ver 6");
 
 let drawcolorpallete = [[[51,0,0],[51,25,0],[51,51,0],[25,51,0],[0,51,0],[0,51,25],[0,51,51],[0,25,51],[0,0,51],[25,0,51],[51,0,51],[51,0,25],[0,0,0]],[[102,0,0],[102,51,0],[102,102,0],[51,102,0],[0,102,0],[0,102,51],[0,102,102],[0,51,102],[0,0,102],[51,0,102],[102,0,102],[102,0,51],[32,32,32]],[[153,0,0],[153,76,0],[153,153,0],[76,153,0],[0,153,0],[0,153,76],[0,153,153],[0,76,153],[0,0,153],[76,0,153],[153,0,153],[153,0,76],[64,64,64]],[[204,0,0],[204,102,0],[204,204,0],[102,204,0],[0,204,0],[0,204,102],[0,204,204],[0,102,204],[0,0,204],[102,0,204],[204,0,204],[204,0,102],[96,96,96]],[[255,0,0],[255,128,0],[255,255,0],[128,255,0],[0,255,0],[0,255,128],[0,255,255],[0,128,255],[0,0,255],[127,0,255],[255,0,255],[255,0,127],[128,128,128]],[[255,51,51],[255,153,51],[255,255,51],[153,255,51],[51,255,51],[51,255,153],[51,255,255],[51,153,255],[51,51,255],[153,51,255],[255,51,255],[255,51,153],[160,160,160]],[[255,102,102],[255,178,102],[255,255,102],[178,255,102],[102,255,102],[102,255,178],[102,255,255],[102,178,255],[102,102,255],[178,102,255],[255,102,255],[255,102,178],[192,192,192]],[[255,153,153],[255,204,153],[255,255,153],[204,255,153],[153,255,153],[153,255,204],[153,255,255],[153,204,255],[153,153,255],[204,153,255],[255,153,255],[255,153,204],[224,224,224]],[[255,204,204],[255,229,204],[255,255,204],[229,255,204],[204,255,204],[204,255,229],[204,255,255],[204,229,255],[204,204,255],[229,204,255],[255,204,255],[255,204,229],[255,255,255]]]
 
@@ -162,6 +162,9 @@ setInterval(draw, 10)
 
 
 let uuidcount = 0;
+
+
+
 function getuuid(){
   uuidcount++;
   return uuidcount;
@@ -218,11 +221,39 @@ window.addEventListener('mousemove', setmousepos, false);
 window.addEventListener('mousedown', mousedown);
 window.addEventListener('mouseup', mouseup);
 window.addEventListener("wheel", zoomin);
-window.addEventListener('keydown', keydown);
-
-
 let keylistener = "";
+window.addEventListener('keydown', keydown);
+window.addEventListener('touchstart', touchdown);
+window.addEventListener('touchend', touchup);
+window.addEventListener('touchmove', changedtouch);
 
+
+function changedtouch(e){
+
+  let touches = e.touches;
+  let touch = e.touches[0];
+
+  let pos = getMousePos(canvas, touch);
+
+  mousex = pos.x
+  mousey = pos.y
+}
+function touchdown(e){
+  let touches = e.touches;
+  let touch = e.touches[0];
+  let pos = getMousePos(canvas, touch);
+
+  mousex = pos.x
+  mousey = pos.y
+  lastmousex = mousex;
+  lastmousey = mousey;
+
+
+  leftclickdown = true;
+}
+function touchup(e){
+  leftclickdown = false;
+}
 
 function keydown(e){
   let key = e.key;
@@ -658,66 +689,6 @@ function drawcanvasboard(pos){
   return changedpixel;
 
 }
-/*
-function drawpallete(x, y){
-
-  let padding = 0.5;
-  let squaresize = 3;
-
-  for(var a = drawcolorpallete.length-1; a >= 0; a-- ){
-    for(var b = drawcolorpallete[a].length-1; b >= 0; b--){
-
-      let dy = (drawcolorpallete.length - 1 - a);
-      dy *= (padding + squaresize);
-
-      let dx = (drawcolorpallete[a].length - 1 - b);
-      dx *= (padding + squaresize);
-
-      let pos = convertcoord(x - dx - squaresize, y + dy, drawcenterx, drawcentery, drawzoom);
-
-      let r = drawcolorpallete[a][b][0];
-      let g = drawcolorpallete[a][b][1];
-      let bl = drawcolorpallete[a][b][2];
-
-
-      ctx.fillStyle = `rgba(${r}, ${g}, ${bl}, 1)`;
-      ctx.fillRect(pos.x, pos.y, squaresize * drawzoom, squaresize * drawzoom);
-
-      let coll = pointcolliding(mousex, mousey, pos.x, pos.y, squaresize*drawzoom, squaresize*drawzoom);
-
-      if(coll){
-        ctx.beginPath();
-        ctx.rect(pos.x, pos.y, squaresize * drawzoom, squaresize * drawzoom);
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = `rgba(255,255,255,1)`;
-        ctx.stroke();
-
-        if(drawjustclicked){
-
-          drawcolor = [r,g,bl];
-
-
-        }
-      }
-
-      if(drawcolor+"" == [r,g,bl]+""){
-
-        ctx.beginPath();
-        ctx.rect(pos.x, pos.y, squaresize * drawzoom, squaresize * drawzoom);
-        ctx.lineWidth = 5;
-        ctx.strokeStyle = `rgba(255,255,255,1)`;
-        ctx.stroke();
-
-
-      }
-
-    }
-  }
-
-
-
-}
-*/
 
 function getHue(red,green,blue) {
 
