@@ -7,7 +7,7 @@ ctx.imageSmoothingEnabled = false;
 
 let connected = false;
 
-let imagedisplaysize = 5;
+let imagedisplaysize = 8;
 let initialwh = 50;
 
 let firstimagepadding = 0.4;
