@@ -53,7 +53,7 @@ let drawdrawmode = false;
 let drawcolorpicker = false;
 let drawdeltascroll = 0;
 
-console.log("ver 6");
+console.log("ver 7");
 
 let drawcolorpallete = [[[51,0,0],[51,25,0],[51,51,0],[25,51,0],[0,51,0],[0,51,25],[0,51,51],[0,25,51],[0,0,51],[25,0,51],[51,0,51],[51,0,25],[0,0,0]],[[102,0,0],[102,51,0],[102,102,0],[51,102,0],[0,102,0],[0,102,51],[0,102,102],[0,51,102],[0,0,102],[51,0,102],[102,0,102],[102,0,51],[32,32,32]],[[153,0,0],[153,76,0],[153,153,0],[76,153,0],[0,153,0],[0,153,76],[0,153,153],[0,76,153],[0,0,153],[76,0,153],[153,0,153],[153,0,76],[64,64,64]],[[204,0,0],[204,102,0],[204,204,0],[102,204,0],[0,204,0],[0,204,102],[0,204,204],[0,102,204],[0,0,204],[102,0,204],[204,0,204],[204,0,102],[96,96,96]],[[255,0,0],[255,128,0],[255,255,0],[128,255,0],[0,255,0],[0,255,128],[0,255,255],[0,128,255],[0,0,255],[127,0,255],[255,0,255],[255,0,127],[128,128,128]],[[255,51,51],[255,153,51],[255,255,51],[153,255,51],[51,255,51],[51,255,153],[51,255,255],[51,153,255],[51,51,255],[153,51,255],[255,51,255],[255,51,153],[160,160,160]],[[255,102,102],[255,178,102],[255,255,102],[178,255,102],[102,255,102],[102,255,178],[102,255,255],[102,178,255],[102,102,255],[178,102,255],[255,102,255],[255,102,178],[192,192,192]],[[255,153,153],[255,204,153],[255,255,153],[204,255,153],[153,255,153],[153,255,204],[153,255,255],[153,204,255],[153,153,255],[204,153,255],[255,153,255],[255,153,204],[224,224,224]],[[255,204,204],[255,229,204],[255,255,204],[229,255,204],[204,255,204],[204,255,229],[204,255,255],[204,229,255],[204,204,255],[229,204,255],[255,204,255],[255,204,229],[255,255,255]]]
 
@@ -131,8 +131,6 @@ let firstimage = document.createElement("img");
 firstimage.src = "firstimage.png";
 let firstimageoriginal = document.createElement("img");
 firstimageoriginal.src = "firstimage.png";
-
-console.log(firstimageoriginal);
 
 let drawtree = {
 
@@ -223,6 +221,7 @@ window.addEventListener('mouseup', mouseup);
 window.addEventListener("wheel", zoomin);
 let keylistener = "";
 window.addEventListener('keydown', keydown);
+
 window.addEventListener('touchstart', touchdown);
 window.addEventListener('touchend', touchup);
 window.addEventListener('touchmove', changedtouch);
@@ -301,12 +300,12 @@ scalecanvas.height = 50;
 var scalecontext = scalecanvas.getContext("2d");
 scalecanvas.imageSmoothingEnabled = false;
 document.body.append(scalecanvas);
+scalecontext.fillStyle = "rgba(255,255,255,1)"
+scalecontext.fillRect(0,0,50,50);
 scalecanvas.style.opacity = 0;
 }
 
 function getPixelArray(image,w,h){
-  scalecontext.fillStyle = "rgba(255,255,255,1)"
-  scalecontext.fillRect(0,0,50,50);
 
   image.setAttribute('crossOrigin', '');
 
@@ -314,6 +313,8 @@ function getPixelArray(image,w,h){
   let data = scalecontext.getImageData(0, 0, w, h);;
   return data;
 }
+getPixelArray(firstimageoriginal, 50, 50);
+
 function scaleImageData(image,w,h){
   let scalefactorx = w / image.width;
   let scalefactory = h / image.height;
@@ -390,8 +391,11 @@ function hoveroutline(){
       let original = document.createElement("img");
       original.src = hoveredimage[7].src;
 
+      let copy = document.createElement("img");
+      copy.src = hoveredimage[7].src;
+
       let newchild = {
-        myimage: hoveredimage[7],
+        myimage: copy,
         myoriginalimage: original,
         myid: hoveredimage[0].myid + "/" + hoveredimage[5],
         personalid: hoveredimage[5],
@@ -519,18 +523,27 @@ function draw() {
 
 
 function checksetimagearray(){
-  if(drawhoveredimage[0].myimagearray == undefined){
+  if(drawhoveredimage[0].myimagearray == undefined || drawhoveredimage[0].myimagearray == "second"){
 
-    let newimageelement = document.createElement("img");
-    newimageelement.src = drawhoveredimage[0].myimage.src;
-    drawhoveredimage[0].myimage = newimageelement;
-    drawhoveredimage[0].myimagearray = getPixelArray(drawhoveredimage[0].myimage,50,50);
+    if(drawhoveredimage[0].myimagearray == undefined){
+      drawhoveredimage[0].myimagearray = "second";
+      getPixelArray(drawhoveredimage[0].myimage, 50, 50);
+    }
+    else{
+
+      drawhoveredimage[0].myimagearray = getPixelArray(drawhoveredimage[0].myimage, 50, 50);
+    }
 
   }
 }
 
 function updatecanvasboard(convert=true){
-  if(convert) drawhoveredimage[0].myimage.src = imagedata_to_image(drawhoveredimage[0].myimagearray);
+
+  if(convert){
+    let data = imagedata_to_image(drawhoveredimage[0].myimagearray);;
+    drawhoveredimage[0].myimage.src = data;
+  }
+
 
 }
 
@@ -1223,7 +1236,6 @@ function drawval(part){
     if(uploadbutton == false && copybuttonid == false){
 
       drawhoveredimage = [part,pos.x,pos.y,s*zoom,s*zoom];
-
 
     }
 
