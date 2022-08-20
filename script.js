@@ -51,9 +51,13 @@ let drawdragmode = false;
 let drawzoommode = true;
 let drawdrawmode = false;
 let drawcolorpicker = false;
+let bucket = false;
+let strokes = [[]];
+
+
 let drawdeltascroll = 0;
 
-console.log("ver 7");
+console.log("ver 8");
 
 let drawcolorpallete = [[[51,0,0],[51,25,0],[51,51,0],[25,51,0],[0,51,0],[0,51,25],[0,51,51],[0,25,51],[0,0,51],[25,0,51],[51,0,51],[51,0,25],[0,0,0]],[[102,0,0],[102,51,0],[102,102,0],[51,102,0],[0,102,0],[0,102,51],[0,102,102],[0,51,102],[0,0,102],[51,0,102],[102,0,102],[102,0,51],[32,32,32]],[[153,0,0],[153,76,0],[153,153,0],[76,153,0],[0,153,0],[0,153,76],[0,153,153],[0,76,153],[0,0,153],[76,0,153],[153,0,153],[153,0,76],[64,64,64]],[[204,0,0],[204,102,0],[204,204,0],[102,204,0],[0,204,0],[0,204,102],[0,204,204],[0,102,204],[0,0,204],[102,0,204],[204,0,204],[204,0,102],[96,96,96]],[[255,0,0],[255,128,0],[255,255,0],[128,255,0],[0,255,0],[0,255,128],[0,255,255],[0,128,255],[0,0,255],[127,0,255],[255,0,255],[255,0,127],[128,128,128]],[[255,51,51],[255,153,51],[255,255,51],[153,255,51],[51,255,51],[51,255,153],[51,255,255],[51,153,255],[51,51,255],[153,51,255],[255,51,255],[255,51,153],[160,160,160]],[[255,102,102],[255,178,102],[255,255,102],[178,255,102],[102,255,102],[102,255,178],[102,255,255],[102,178,255],[102,102,255],[178,102,255],[255,102,255],[255,102,178],[192,192,192]],[[255,153,153],[255,204,153],[255,255,153],[204,255,153],[153,255,153],[153,255,204],[153,255,255],[153,204,255],[153,153,255],[204,153,255],[255,153,255],[255,153,204],[224,224,224]],[[255,204,204],[255,229,204],[255,255,204],[229,255,204],[204,255,204],[204,255,229],[204,255,255],[204,229,255],[204,204,255],[229,204,255],[255,204,255],[255,204,229],[255,255,255]]]
 
@@ -84,6 +88,12 @@ let colorpickicon = document.createElement("img");
 colorpickicon.src = "colorpickicon.png"
 let drawicon = document.createElement("img");
 drawicon.src = "drawicon.png";
+let bucketicon = document.createElement("img");
+bucketicon.src = "bucketicon.png";
+let undoicon = document.createElement("img");
+undoicon.src = "undoicon.png";
+
+
 let refreshicon = document.createElement("img");
 refreshicon.src = "refreshicon.png"
 let reseticon = document.createElement("img");
@@ -526,12 +536,15 @@ function checksetimagearray(){
   if(drawhoveredimage[0].myimagearray == undefined || drawhoveredimage[0].myimagearray == "second"){
 
     if(drawhoveredimage[0].myimagearray == undefined){
+      drawhoveredimage[0].strokes = [[]];
+      console.log("SET THE STORKES");
       drawhoveredimage[0].myimagearray = "second";
       getPixelArray(drawhoveredimage[0].myimage, 50, 50);
     }
     else{
 
       drawhoveredimage[0].myimagearray = getPixelArray(drawhoveredimage[0].myimage, 50, 50);
+
     }
 
   }
@@ -597,6 +610,7 @@ function drawcolorpickermode(pos){
           drawcolor = hsv;
 
           drawcolorpicker = false;
+          bucket = false;
 
         }
 
@@ -611,6 +625,196 @@ function drawcolorpickermode(pos){
     return changedpixel;
 
 }
+
+function bucketmode(pos){
+
+  let flooded = new Set();
+
+
+  let rgbcolor = HSVToRGB(drawcolor[0], drawcolor[1], drawcolor[2]);
+
+  let changedpixel = [];
+
+  let dx = mousex - pos.x;
+  let dy = mousey - pos.y;
+
+  let ir = 1;
+
+  let px = dx;
+  let py = dy;
+
+
+  let floodcolor;
+  if(px > 0 && px < 50 * drawzoom && py > 0 && py < 50 * drawzoom){
+
+      px /= 50 * drawzoom;
+      py /= 50 * drawzoom;
+
+      pixelx = Math.floor( px * 50 );
+      pixely = Math.floor( py * 50 );
+
+      if(pixelx < 0 || pixely < 0 || pixelx >= 50 || pixely >= 50) return;;
+
+      let index = pixely * 50 + pixelx;
+      index *= 4;
+
+      let arr = drawhoveredimage[0].myimagearray.data
+      let rgb = [arr[index],arr[index+1],arr[index+2]];
+
+      floodcolor = rgb;
+
+      let newflooded = [[pixelx,pixely]];
+      let nextnewflooded = [];
+      flooded.add(pixelx+","+pixely);
+
+
+      while(newflooded.length > 0){
+
+
+        let add = [[0,1],[0,-1], [1,0], [-1,0]];
+
+        for(var a = 0; a < newflooded.length; a++){
+
+          for(var b = 0; b < add.length; b++){
+
+            let pixelx = newflooded[a][0] + add[b][0];
+            let pixely = newflooded[a][1] + add[b][1];
+
+            if(flooded.has( pixelx +","+pixely ))continue;
+
+            let index = pixely * 50 + pixelx;
+            index *= 4;
+
+            if(pixelx < 0 || pixely < 0 || pixelx >= 50 || pixely >= 50) continue;
+
+            let arr = drawhoveredimage[0].myimagearray.data
+            let rgb = [arr[index],arr[index+1],arr[index+2]];
+
+
+            if(rgb+"" == floodcolor+""){
+
+              flooded.add(pixelx+","+pixely);
+              nextnewflooded.push([pixelx,pixely]);
+
+            }
+
+
+          }
+
+
+        }
+
+        newflooded = [...nextnewflooded];
+        nextnewflooded = [];
+
+      }
+
+
+
+
+  }
+
+  let floodedpixels = [...flooded];
+
+  let strokeend = drawhoveredimage[0].strokes.length-1;
+
+  for(var a = 0; a < floodedpixels.length; a++){
+
+    let pixelarr = floodedpixels[a].split(",");
+
+    pixelx = parseInt(pixelarr[0]);
+    pixely = parseInt(pixelarr[1]);
+
+    if(pixelx < 0 || pixely < 0 || pixelx >= 50 || pixely >= 50) continue;
+
+    let index = pixely * 50 + pixelx;
+    index *= 4;
+
+    if(a == 0){
+
+      let arr = drawhoveredimage[0].myimagearray.data
+      console.log(arr[index],arr[index+1],arr[index+2])
+
+
+    }
+
+    if(drawjustclicked){
+
+      let arr = drawhoveredimage[0].myimagearray.data
+
+
+      let flooredrgb = [Math.floor(rgbcolor[0]),Math.floor(rgbcolor[1]),Math.floor(rgbcolor[2]) ]
+
+      if( [arr[index],arr[index+1],arr[index+2]]+"" != flooredrgb+""){
+        drawhoveredimage[0].strokes[strokeend].push([ [pixelx, pixely], [arr[index],arr[index+1],arr[index+2]] ])
+      }
+
+      arr[index] = flooredrgb[0];
+      arr[index+1] = flooredrgb[1];
+      arr[index+2] = flooredrgb[2];
+      changedpixel = true;
+
+
+    }
+
+
+    ctx.fillStyle = `rgba(${rgbcolor[0]},${rgbcolor[1]},${rgbcolor[2]},255)`;
+    ctx.fillRect(pos.x + (pixelx + 0.25) * drawzoom, pos.y + (pixely+0.25) * drawzoom, (0.5*drawzoom), (0.5*drawzoom));
+    //ctx.arc(pos.x + (pixelx+0.5) * drawzoom, pos.y + (pixely+0.5) * drawzoom, drawzoom/2, 0, 2 * Math.PI, false)
+
+
+  }
+
+  return changedpixel;
+
+
+}
+
+function undomode(){
+
+  let nonemptyindex = drawhoveredimage[0].strokes.length-1;
+
+  for(var a = drawhoveredimage[0].strokes.length-1; a >= -1; a--){
+    if(a == -1){
+      drawhoveredimage[0].strokes.push([]);
+      return;
+    }
+    if(drawhoveredimage[0].strokes[a].length > 0){
+      nonemptyindex = a;
+      break;
+    }
+    drawhoveredimage[0].strokes.pop();
+  }
+
+  for(var a = 0; a < drawhoveredimage[0].strokes[nonemptyindex].length; a++){
+
+    pixelx = drawhoveredimage[0]. strokes[nonemptyindex][a][0][0];
+    pixely = drawhoveredimage[0].strokes[nonemptyindex][a][0][1];
+
+    if(pixelx < 0 || pixely < 0 || pixelx >= 50 || pixely >= 50) return;;
+
+    let index = pixely * 50 + pixelx;
+    index *= 4;
+
+    let newcolor = drawhoveredimage[0].strokes[nonemptyindex][a][1];
+    let arr = drawhoveredimage[0].myimagearray.data
+
+    arr[index] = newcolor[0];
+    arr[index+1] = newcolor[1];
+    arr[index+2] = newcolor[2];
+
+
+
+  }
+  drawhoveredimage[0].strokes.pop();
+  drawhoveredimage[0].strokes.push([]);
+
+  console.log(drawhoveredimage[0].strokes);
+
+
+
+}
+
 function drawcanvasboard(pos){
 
 
@@ -632,7 +836,9 @@ function drawcanvasboard(pos){
   mdx = ddx / (sum == 0 ? 1 : sum);
   mdy = ddy / (sum == 0 ? 1 : sum);
 
-  let ir = 1;
+  let ir = drawzoom;
+
+  let strokeend = drawhoveredimage[0].strokes.length-1;
 
   for(var a = 0; a <= sum; a += ir){
 
@@ -663,7 +869,6 @@ function drawcanvasboard(pos){
               ctx.strokeStyle = `rgba(${rgbcolor[0]}, ${rgbcolor[1]}, ${rgbcolor[2]}, 255)`;
               ctx.stroke();
 
-
             }
 
             if(drawjustclicked){
@@ -672,14 +877,23 @@ function drawcanvasboard(pos){
 
             if(drawdrawmode){
 
-              changedpixel = true;
+
               drawdragmode = false;
 
               let arr = drawhoveredimage[0].myimagearray.data
-              arr[index] = rgbcolor[0];
-              arr[index+1] = rgbcolor[1];
-              arr[index+2] = rgbcolor[2];
-              arr[index+3] = 255;
+
+              let flooredrgb = [Math.floor(rgbcolor[0]),Math.floor(rgbcolor[1]),Math.floor(rgbcolor[2]) ]
+
+              if( arr[index]!=flooredrgb[0] || arr[index+1]!=flooredrgb[1] || arr[index+2]!=flooredrgb[2] ){
+                drawhoveredimage[0].strokes[strokeend].push([ [ipixelx, ipixely], [arr[index],arr[index+1],arr[index+2]] ])
+              }
+
+              arr[index] = flooredrgb[0];
+              arr[index+1] = flooredrgb[1];
+              arr[index+2] = flooredrgb[2];
+
+              changedpixel = true;
+
 
             }
 
@@ -791,6 +1005,7 @@ function drawpallete(x,y,sx,sy,hp,hw){
     drawdragmode = false;
     drawdrawmode = false;
     drawcolorpicker = false;
+    bucket = false;
 
     let newh = (mousey - pos.y) / (sy*drawzoom);
 
@@ -834,6 +1049,7 @@ function drawpallete(x,y,sx,sy,hp,hw){
     drawdragmode = false;
     drawdrawmode = false;
     drawcolorpicker = false;
+    bucket = false;
 
     let newsaturation = (mousex - pos.x) / (sx*drawzoom);
 
@@ -912,6 +1128,7 @@ function drawsizesliderf(x, y, w, mw, h){
       draggingdrawslider = true;
       drawdragmode = false;
       drawcolorpicker = false;
+      bucket = false;
     }
 
   }
@@ -967,6 +1184,9 @@ function drawsizesliderf(x, y, w, mw, h){
 
 }
 
+
+let lastchange = false;
+
 function drawdraw(){
 
 
@@ -979,58 +1199,133 @@ function drawdraw(){
   ctx.drawImage(drawhoveredimage[0].myimage, pos.x, pos.y, 50 * drawzoom, 50 * drawzoom);
 
   checksetimagearray();
-
-
-  let change = false;
-
-  if(!drawcolorpicker){
-    change = drawcanvasboard(pos);
-  }
-  else{
-    drawcolorpickermode(pos);
-  }
-
-  updatecanvasboard(change);
-
   drawpallete(canvas.width/2 - 75, canvas.height/2 - 25, 40, 40, 1, 5);
   drawsizesliderf(canvas.width/2 - 29, canvas.height/2 + 18, 46, 35, 1);
 
 
+  let drawtool = !drawcolorpicker && !bucket;
+
   let exitbuttonwidth = 20;
   let exitbuttonheight = 10;
-  let exitbuttonposx = 19;
-  let exitbuttonpos = convertcoord(canvas.width/2 + exitbuttonposx - 25, canvas.height/2 + 25, drawcenterx, drawcentery, drawzoom);
+  let exitbuttonposx = 25;
+  let exitbuttonposy = -25;
+  let exitbuttonpos = convertcoord(canvas.width/2 + exitbuttonposx, canvas.height/2 + exitbuttonposy, drawcenterx, drawcentery, drawzoom);
   let exitbutton = drawoutlinebutton(exitbuttonpos.x, exitbuttonpos.y, exitbuttonwidth * drawzoom, exitbuttonheight * drawzoom, darkbuttoncolor, "rgba(0,0,0,1)", 5, drawjustclicked)
   ctx.drawImage(closeicon, exitbuttonpos.x, exitbuttonpos.y, exitbuttonwidth * drawzoom, exitbuttonheight * drawzoom);
 
   let resetbuttonwidth = 10;
   let resetbuttonheight = 10;
-  let resetbuttonpos = convertcoord(canvas.width/2 + exitbuttonwidth + 1 - 25 + exitbuttonposx, canvas.height/2 + 25, drawcenterx, drawcentery, drawzoom);
+  let resetbuttonposx = 25;
+  let resetbuttonposy = -25 + exitbuttonheight;
+  let resetbuttonpos = convertcoord(canvas.width/2 + resetbuttonposx, canvas.height/2 + resetbuttonposy, drawcenterx, drawcentery, drawzoom);
   let resetbutton = drawoutlinebutton(resetbuttonpos.x, resetbuttonpos.y, resetbuttonwidth * drawzoom, resetbuttonheight * drawzoom, darkbuttoncolor, "rgba(0,0,0,1)", 5, drawjustclicked)
   ctx.drawImage(reseticon, resetbuttonpos.x, resetbuttonpos.y, resetbuttonwidth * drawzoom, resetbuttonheight * drawzoom)
 
+  let drawtoolwidth = 10;
+  let drawtoolheight = 10;
+  let drawtoolposx = -25;
+  let drawtoolposy = 25;
+  let drawtoolpos = convertcoord(canvas.width/2 + drawtoolposx, canvas.height/2 + drawtoolposy, drawcenterx, drawcentery, drawzoom);
+  let drawtoolbutton = drawoutlinebutton(drawtoolpos.x, drawtoolpos.y, drawtoolwidth * drawzoom, drawtoolheight * drawzoom, darkbuttoncolor, "rgba(0,0,0,1)", 5, drawjustclicked, drawtool)
+  ctx.drawImage(drawicon, drawtoolpos.x, drawtoolpos.y, drawtoolwidth * drawzoom, drawtoolheight * drawzoom)
+
   let colorpickwidth = 10;
   let colorpickheight = 10;
-  let colorpickpos = convertcoord(canvas.width/2 - 25, canvas.height/2 + 25, drawcenterx, drawcentery, drawzoom);
-  let colorpickbutton = drawoutlinebutton(colorpickpos.x, colorpickpos.y, colorpickwidth * drawzoom, colorpickheight * drawzoom, darkbuttoncolor, "rgba(0,0,0,1)", 5, drawjustclicked)
+  let colorpickposx = -25 + drawtoolwidth + 1;
+  let colorpickposy = 25;
+  let colorpickpos = convertcoord(canvas.width/2 + colorpickposx, canvas.height/2 + colorpickposy, drawcenterx, drawcentery, drawzoom);
+  let colorpickbutton = drawoutlinebutton(colorpickpos.x, colorpickpos.y, colorpickwidth * drawzoom, colorpickheight * drawzoom, darkbuttoncolor, "rgba(0,0,0,1)", 5, drawjustclicked, drawcolorpicker)
   ctx.drawImage(colorpickicon, colorpickpos.x, colorpickpos.y, colorpickwidth * drawzoom, colorpickheight * drawzoom)
+
+  let bucketwidth = 10;
+  let bucketheight = 10;
+  let bucketposx = -25 + drawtoolwidth + 1 + colorpickwidth + 1;
+  let bucketposy = 25;
+  let bucketpos = convertcoord(canvas.width/2 + bucketposx, canvas.height/2 + bucketposy, drawcenterx, drawcentery, drawzoom);
+  let bucketbutton = drawoutlinebutton(bucketpos.x, bucketpos.y, bucketwidth * drawzoom, bucketheight * drawzoom, darkbuttoncolor, "rgba(0,0,0,1)", 5, drawjustclicked, bucket)
+  ctx.drawImage(bucketicon, bucketpos.x, bucketpos.y, bucketwidth * drawzoom, bucketheight * drawzoom)
+
+  let undowidth = 10;
+  let undoheight = 10;
+  let undoposx = -25 + drawtoolwidth + 1 + colorpickwidth + 1 + bucketwidth + 1;
+  let undoposy = 25;
+  let undopos = convertcoord(canvas.width/2 + undoposx, canvas.height/2 + undoposy, drawcenterx, drawcentery, drawzoom);
+  let undobutton = drawoutlinebutton(undopos.x, undopos.y, undowidth * drawzoom, undoheight * drawzoom, darkbuttoncolor, "rgba(0,0,0,1)", 5, drawjustclicked)
+  ctx.drawImage(undoicon, undopos.x, undopos.y, undowidth * drawzoom, undoheight * drawzoom)
+
+  let undo = false;
+  if(undobutton == "clicked"){
+    undo = true;
+  }
 
   if(colorpickbutton == "clicked"){
     drawcolorpicker = true;
+    bucket = false;
+  }
+
+  if(bucketbutton == "clicked"){
+    bucket = true;
+    drawcolorpicker = false;
+  }
+
+  if(drawtoolbutton == "clicked"){
+    bucket = false;
+    drawcolorpicker = false;
   }
 
 
+
+  let change = false;
+
+  if(drawjustclicked && drawhoveredimage[0].strokes[drawhoveredimage[0].strokes.length-1].length > 0){
+    drawhoveredimage[0].strokes.push([]);
+  }
+
+  if(undo){
+    undomode();
+    change = true;
+  }
+  else if(drawcolorpicker){
+    drawcolorpickermode(pos);
+  }
+  else if(bucket){
+    change = bucketmode(pos);
+  }
+  else{
+    change = drawcanvasboard(pos);
+  }
+
+  updatecanvasboard(change);
+  lastchange = change;
+
+
   if(resetbutton == "clicked"){
-
-
-
     drawhoveredimage[0].myimage.src = drawhoveredimage[0].myoriginalimage.src;
 
-    drawhoveredimage[0].myimagearray = getPixelArray(drawhoveredimage[0].myoriginalimage, 50, 50);
+    let array = getPixelArray(drawhoveredimage[0].myoriginalimage, 50, 50).data;
+
+    for(var a = 0; a < array.length; a+=4){
+
+      let index = a / 4;
+      let pixelx = index % 50;
+      let pixely = Math.floor(index / 50);
+
+      let oldarray = drawhoveredimage[0].myimagearray.data;
+
+      if([oldarray[a], oldarray[a+1], oldarray[a+2]]+"" != [array[a], array[a+1], array[a+2]]){
+
+        drawhoveredimage[0].strokes[drawhoveredimage[0].strokes.length-1].push([ [pixelx,pixely], [oldarray[a], oldarray[a+1], oldarray[a+2]], [array[a], array[a+1], array[a+2]] ])
+
+        oldarray[a] = array[a]
+        oldarray[a+1] = array[a+1]
+        oldarray[a+2] = array[a+2]
+
+      }
+
+
+    }
 
     updatecanvasboard(true);
-
-
   }
 
 
