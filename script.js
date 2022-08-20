@@ -73,7 +73,7 @@ let draggingdrawslider = false;
 let draggingvs = false;
 let draggingh = false;
 
-let drawsize = 1;
+let drawsize = 15;
 let drawsizeslider = drawsize;
 
 let huemap = document.createElement("img");
@@ -1099,6 +1099,9 @@ function drawsizesliderf(x, y, w, mw, h){
   let pos = convertcoord(x-w,y,drawcenterx,drawcentery,drawzoom);
 
   let barheight = h;
+
+  ctx.fillStyle = "rgba(0,0,0,0.5)";
+  ctx.fillRect(pos.x, pos.y - 2 * drawzoom, w * drawzoom, 44 * drawzoom);
 
   ctx.fillStyle = "rgba(255,255,255,1)";
   ctx.fillRect(pos.x, pos.y, w * drawzoom, barheight * drawzoom);
