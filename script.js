@@ -28,10 +28,10 @@ let lastmousey = 0;
 let dmousex = 0;
 let dmousey = 0;
 
-let centerx = 520;
-let centery = 700;
+let centerx = 700;
+let centery = 900;
 
-let zoom = 2;
+let zoom = 0.8;
 
 let leftclickdown = false;
 let lastleftclick = false;
