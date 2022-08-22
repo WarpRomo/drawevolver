@@ -2071,12 +2071,12 @@ socket.on("uploadedimage", (path, newid, ping, uuid) => {
 
   obj.uploading = false;
 
-  addnotification("Uploaded image!", 2000, 1000);
-
 
   if(newid == "failed"){
     return;
   }
+
+  addnotification("Uploaded image!", 2000, 1000);
 
   let newimage = document.createElement("img");
   newimage.src = obj.myimage.src;
