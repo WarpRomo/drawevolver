@@ -323,7 +323,6 @@ function getPixelArray(image,w,h){
   let data = scalecontext.getImageData(0, 0, w, h);;
   return data;
 }
-getPixelArray(firstimageoriginal, 50, 50);
 
 function scaleImageData(image,w,h){
   let scalefactorx = w / image.width;
@@ -536,7 +535,7 @@ function checksetimagearray(){
   if(drawhoveredimage[0].myimagearray == undefined || drawhoveredimage[0].myimagearray == "second"){
 
     if(drawhoveredimage[0].myimagearray == undefined){
-      drawhoveredimage[0].strokes = [[]];
+      if(drawhoveredimage[0].strokes == undefined) drawhoveredimage[0].strokes = [[]];
       console.log("SET THE STORKES");
       drawhoveredimage[0].myimagearray = "second";
       getPixelArray(drawhoveredimage[0].myimage, 50, 50);
@@ -2071,6 +2070,8 @@ socket.on("uploadedimage", (path, newid, ping, uuid) => {
   let obj = getpath(path, uuid);
 
   obj.uploading = false;
+
+  addnotification("Uploaded image!", 2000, 1000);
 
 
   if(newid == "failed"){
