@@ -1,5 +1,5 @@
 
-const socket = io('https://api.drawevolver.com:8081');
+const socket = io('https://drawevolver-server-production.up.railway.app');
 
 var canvas = document.getElementById("myCanvas");
 var ctx = canvas.getContext("2d");
@@ -231,11 +231,17 @@ window.addEventListener('mouseup', mouseup);
 window.addEventListener("wheel", zoomin);
 let keylistener = "";
 window.addEventListener('keydown', keydown);
+window.addEventListener('keyup', keyup);
 
 window.addEventListener('touchstart', touchdown);
 window.addEventListener('touchend', touchup);
 window.addEventListener('touchmove', changedtouch);
 
+
+let zoominkey = "z";
+let zoomoutkey = "x";
+let zoomingin = false;
+let zoomingout = false;
 
 function changedtouch(e){
 
@@ -270,9 +276,17 @@ function keydown(e){
     key = "/"
 
   }
+  if(e.key == zoominkey) zoomingin = true;
+  if(e.key == zoomoutkey) zoomingout = true;
 
   keylistener += key;
 }
+
+function keyup(e){
+  if(e.key == zoominkey) zoomingin = false;
+  if(e.key == zoomoutkey) zoomingout = false;
+}
+
 function mousedown(e){
   leftclickdown = true;
 }
@@ -417,6 +431,8 @@ function hoveroutline(){
         children:[]
       }
 
+      console.log("THUUG LIIIIIIIFE: " + newchild.uuid);
+
       hoveredimage[0].children.push(newchild);
 
 
@@ -509,6 +525,29 @@ function draw() {
 
   if(deltascroll != 0){
     canvaszoom();
+  }
+  if( (zoomingin || zoomingout) && !(zoomingin && zoomingout)){
+
+    let dir = zoomingin ? -1 : 1;
+
+
+
+    if(drawmode){
+
+      let values = calculatezoomadjust(mousex, mousey, drawcenterx, drawcentery, drawzoom, dir, 1 + (zoomspeed - 1)/9);
+
+      drawcenterx = values.centerx;
+      drawcentery = values.centery;
+      drawzoom = values.zoom;
+    }
+    else{
+      let values = calculatezoomadjust(mousex, mousey, centerx, centery, zoom, dir, 1 + (zoomspeed - 1)/9);
+
+      centerx = values.centerx;
+      centery = values.centery;
+      zoom = values.zoom;
+    }
+
   }
 
   if(drawmode) drawdraw();
@@ -1364,7 +1403,7 @@ function canvaszoom(){
   centery = values.centery;
   zoom = values.zoom;
 }
-function calculatezoomadjust(mousex, mousey, centerx, centery, zoom, deltascroll){
+function calculatezoomadjust(mousex, mousey, centerx, centery, zoom, deltascroll, speed=zoomspeed){
 
   let mousepos = coordconvert(mousex, mousey, centerx, centery, zoom);
 
@@ -1372,16 +1411,16 @@ function calculatezoomadjust(mousex, mousey, centerx, centery, zoom, deltascroll
   let dy = (mousepos.y - centery);
 
   if(deltascroll < 0){
-    zoom *= zoomspeed;
-    dx /= zoomspeed;
-    dy /= zoomspeed;
+    zoom *= speed;
+    dx /= speed;
+    dy /= speed;
     centerx = mousepos.x - dx;
     centery = mousepos.y - dy;
   }
   else{
-    zoom /= zoomspeed;
-    dx *= zoomspeed;
-    dy *= zoomspeed;
+    zoom /= speed;
+    dx *= speed;
+    dy *= speed;
     centerx = mousepos.x - dx;
     centery = mousepos.y - dy;
   }
@@ -1583,7 +1622,7 @@ function drawval(part){
 
     part.searchinput[2] = "searching";
     console.log("search image");
-    socket.emit("getpath", part.myid + `/${input}.png`, "searchimage", part.uuid)
+    socket.emit("getpath", part.myid + `/${input}/image`, "searchimage", part.uuid)
 
 
   }
@@ -1758,6 +1797,7 @@ function drawval(part){
     }
 
     if(isopen) drawoutlinebutton(pos.x, pos.y, s*zoom, s*zoom + s * 0.2 * zoom, "rgba(0,0,0,0)", outlinecolor, 0.05 * s * zoom, part.images, isopen);
+
     ctx.drawImage(part.images[a].image, pos.x , pos.y, s*zoom, s*zoom)
 
     ctx.fillStyle = buttoncolor;
@@ -1816,7 +1856,7 @@ function executeval(part){
     part.requests.add(-1);
 
     console.log("request text");
-    socket.emit("getpath", part.myid + "/info.txt", "", part.uuid)
+    socket.emit("getpath", part.myid + "/length", "", part.uuid)
 
   }
 
@@ -1829,7 +1869,7 @@ function executeval(part){
 
 
       console.log("request image");
-      socket.emit("getpath", part.myid + `/${a}.png`, "", part.uuid)
+      socket.emit("getpath", part.myid + `/${a}/image`, "", part.uuid)
 
     }
 
@@ -1846,7 +1886,7 @@ function executeval(part){
       part.requests.add(a);
 
       console.log("request image");
-      socket.emit("getpath", part.myid + `/${a}.png`, "", part.uuid)
+      socket.emit("getpath", part.myid + `/${a}/image`, "", part.uuid)
 
     }
 
@@ -1890,9 +1930,13 @@ function pointcolliding(x,y,x2,y2,w,h){
 
 }
 
+console.log("gucci gang!");
+
 socket.on("path", data => {
 
 
+
+  console.log(data.ping);
 
   if(data.ping != ""){
 
@@ -1901,7 +1945,7 @@ socket.on("path", data => {
       let path = data.path;
       let uuid = data.uuid;
 
-      if(path.endsWith(".png")) path = path.split(".png")[0];
+      if(path.endsWith("/image")) path = path.split("/image")[0];
 
       path = path.split("/");
 
@@ -1925,10 +1969,11 @@ socket.on("path", data => {
       let imageelement = document.createElement("img");
 
       let array = new Uint8Array(data.data);
-      var blob = new Blob([array], {'type': 'image/png'});
-      let url = URL.createObjectURL(blob);
 
-      imageelement.src = url;
+      let imgData = ctx.createImageData(50, 50);
+      imgData.data = array;
+      let imagesrc = imagedata_to_image(imgData, 50, 50);
+      imageelement.src = imagesrc;
 
       let newimage = {
         id: theid,
@@ -1945,12 +1990,10 @@ socket.on("path", data => {
   }
   else if(data.type == "image"){
 
-    console.log(data);
-
     let path = data.path;
     let uuid = data.uuid;
 
-    if(path.endsWith(".png")) path = path.split(".png")[0];
+    if(path.endsWith("/image")) path = path.split("/image")[0];
 
     path = path.split("/");
 
@@ -1960,11 +2003,21 @@ socket.on("path", data => {
 
     let imageelement = document.createElement("img");
 
-    let array = new Uint8Array(data.data);
-    var blob = new Blob([array], {'type': 'image/png'});
-    let url = URL.createObjectURL(blob);
 
-    imageelement.src = url;
+
+    let imgData = ctx.createImageData(50, 50);
+    let myarr = new Uint8Array(data.data);
+
+    imgData.data = new Uint8Array(data.data);
+
+    for(var i = 0; i < myarr.length; i++){
+      imgData.data[i] = myarr[i];
+    }
+
+
+    let imagesrc = imagedata_to_image(imgData, 50, 50);
+
+    imageelement.src = imagesrc;
 
     let newimage = {
       id: theid,
@@ -1999,13 +2052,17 @@ socket.on("path", data => {
     let path = data.path;
     let uuid = data.uuid;
 
-    if(path.endsWith(".txt")) path = path.split(".txt")[0];
+    //if(path.endsWith("/length")) path = path.split("/length")[0];
+
+
+
+    console.log("yuh," + path);
 
     path = path.split("/");
 
     let obj = getpath(path, uuid);
 
-    obj.mylength = data.data["length"];
+    obj.mylength = data.data;
 
   }
 
@@ -2020,7 +2077,10 @@ function getpath(path, uuid = "none"){
   let objs = [drawtree];
   let newobjs = [];
 
-  for(var a = 1; a < path.length-1; a++){
+  console.log(path);
+  console.log(drawtree);
+
+  for(let a = 1; a < path.length-1; a++){
 
     for(var b = 0; b < objs.length; b++){
 
@@ -2116,6 +2176,7 @@ socket.on("notification", (data) => {
 
 })
 
+//taken from stackoverflow
 function copyTextToClipboard(text) {
   var textArea = document.createElement("textarea");
 
