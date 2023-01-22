@@ -1,5 +1,5 @@
 
-const socket = io('https://drawevolver-server-production.up.railway.app');
+const socket = io('https://api.drawevolver.com');
 
 var canvas = document.getElementById("myCanvas");
 var ctx = canvas.getContext("2d");
