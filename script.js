@@ -1930,8 +1930,6 @@ function pointcolliding(x,y,x2,y2,w,h){
 
 }
 
-console.log("gucci gang!");
-
 socket.on("path", data => {
 
 
