@@ -1,5 +1,5 @@
 
-const socket = io('https://api.drawevolver.com');
+const socket = io('https://api.drawevolver.com', { transports : ['websocket'] });
 
 var canvas = document.getElementById("myCanvas");
 var ctx = canvas.getContext("2d");
