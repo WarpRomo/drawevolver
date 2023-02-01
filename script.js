@@ -431,8 +431,6 @@ function hoveroutline(){
         children:[]
       }
 
-      console.log("THUUG LIIIIIIIFE: " + newchild.uuid);
-
       hoveredimage[0].children.push(newchild);
 
 
